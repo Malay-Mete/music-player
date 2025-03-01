@@ -14,6 +14,8 @@ export default function Home() {
 
   const { data: likedSongs } = useQuery<LikedSong[]>({
     queryKey: ['/api/liked-songs'],
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const handleSearch = (query: string) => {

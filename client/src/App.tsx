@@ -12,6 +12,7 @@ import { useState } from "react";
 import Home from "@/pages/home";
 import Search from "@/pages/search";
 import PlaylistPage from "@/pages/playlist";
+import LikedSongs from "@/pages/liked-songs"; // Added import for LikedSongs
 import NotFound from "@/pages/not-found";
 
 function AuthCheck({ children }: { children: React.ReactNode }) {
@@ -71,6 +72,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/search" component={Search} />
       <Route path="/playlist/:id" component={PlaylistPage} />
+      <Route path="/liked-songs" component={LikedSongs} /> {/* Added route for LikedSongs */}
       <Route component={NotFound} />
     </Switch>
   );
