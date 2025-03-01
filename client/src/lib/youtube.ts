@@ -29,7 +29,11 @@ export async function searchVideos(query: string): Promise<SearchResult[]> {
   }));
 }
 
-export function createYouTubePlayer(elementId: string, videoId: string): Promise<YT.Player> {
+export function createYouTubePlayer(
+  elementId: string, 
+  videoId: string, 
+  onStateChange?: (state: number) => void
+): Promise<YT.Player> {
   return new Promise((resolve, reject) => {
     try {
       // Check if element exists
@@ -72,6 +76,12 @@ export function createYouTubePlayer(elementId: string, videoId: string): Promise
             events: {
               onReady: (event) => {
                 resolve(event.target);
+              },
+              onStateChange: (event) => {
+                // Call the state change callback if provided
+                if (onStateChange) {
+                  onStateChange(event.data);
+                }
               },
               onError: (event) => {
                 reject(new Error(`YouTube player error: ${event.data}`));

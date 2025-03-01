@@ -38,7 +38,11 @@ declare namespace YT {
     setVolume(volume: number): void;
     getVolume(): number;
     setPlaybackQuality(suggestedQuality: string): void;
+    getPlaybackQuality(): string;
+    getAvailableQualityLevels(): string[];
     getVideoData(): { title: string; video_id: string };
+    getCurrentTime(): number;
+    getPlayerState(): number;
     destroy(): void;
   }
 }
