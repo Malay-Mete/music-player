@@ -80,7 +80,7 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
         playerRef.current = undefined;
       }
     };
-  }, [currentVideoId, quality]);
+  }, [currentVideoId]); // Removed quality dependency
 
   const togglePlayPause = () => {
     if (!playerRef.current) return;
@@ -105,7 +105,23 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
   const handleQualityChange = (value: string) => {
     setQuality(value);
     if (playerRef.current) {
+      // Save current state
+      const currentTime = playerRef.current.getCurrentTime();
+      const wasPlaying = playerRef.current.getPlayerState() === 1;
+      
+      // Set quality
       playerRef.current.setPlaybackQuality(value);
+      
+      // If video was playing, ensure it continues
+      if (wasPlaying) {
+        // Small timeout to allow quality change to process
+        setTimeout(() => {
+          if (playerRef.current) {
+            playerRef.current.seekTo(currentTime, true);
+            playerRef.current.playVideo();
+          }
+        }, 100);
+      }
     }
   };
 
