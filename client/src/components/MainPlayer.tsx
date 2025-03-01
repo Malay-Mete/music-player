@@ -99,6 +99,10 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
   };
 
   const toggleVideo = () => {
+    // If we're about to hide the video and there's a player, pause it first
+    if (isVideoVisible && playerRef.current) {
+      playerRef.current.pauseVideo();
+    }
     setIsVideoVisible(!isVideoVisible);
   };
 
@@ -143,13 +147,10 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
         "flex flex-col md:flex-row items-center justify-between max-w-7xl mx-auto gap-4 p-4",
         isPlayerMinimized ? "h-16" : "h-auto"
       )}>
-        {!isPlayerMinimized && (
+        {!isPlayerMinimized && isVideoVisible && (
           <div 
             id="youtube-player" 
-            className={clsx(
-              "w-full md:w-64 aspect-video rounded-lg overflow-hidden",
-              !isVideoVisible && "hidden"
-            )} 
+            className="w-full md:w-64 aspect-video rounded-lg overflow-hidden"
           />
         )}
 
