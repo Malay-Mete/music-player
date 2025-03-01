@@ -20,6 +20,7 @@ interface MainPlayerProps {
 
 export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
   const playerRef = useRef<YT.Player>();
+  const playerElementRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState([50]);
   const [currentVideoId, setCurrentVideoId] = useState(videoId);
@@ -54,16 +55,28 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
 
   useEffect(() => {
     let player: YT.Player | undefined;
-    let container = document.getElementById('youtube-player');
-
-    if (currentVideoId && container) {
-      createYouTubePlayer('youtube-player', currentVideoId)
+    
+    if (currentVideoId && playerElementRef.current && isVideoVisible && !isPlayerMinimized) {
+      // Create a new div element for the player to prevent stale references
+      const playerId = `youtube-player-${Date.now()}`;
+      const playerContainer = playerElementRef.current;
+      
+      // Clear previous content
+      playerContainer.innerHTML = '';
+      
+      // Create new element for player
+      const playerElement = document.createElement('div');
+      playerElement.id = playerId;
+      playerContainer.appendChild(playerElement);
+      
+      createYouTubePlayer(playerId, currentVideoId)
         .then((newPlayer) => {
           player = newPlayer;
           playerRef.current = newPlayer;
           player.setPlaybackQuality(quality);
           player.setVolume(volume[0]);
-        });
+        })
+        .catch(err => console.error("Error creating YouTube player:", err));
     }
 
     const handlePlayVideo = (event: CustomEvent<{ videoId: string }>) => {
@@ -76,11 +89,15 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
     return () => {
       window.removeEventListener('PLAY_VIDEO', handlePlayVideo as EventListener);
       if (player) {
-        player.destroy();
+        try {
+          player.destroy();
+        } catch (error) {
+          console.error("Error destroying player:", error);
+        }
         playerRef.current = undefined;
       }
     };
-  }, [currentVideoId]); // Removed quality dependency
+  }, [currentVideoId, isVideoVisible, isPlayerMinimized]); // Add dependencies that affect player visibility
 
   const togglePlayPause = () => {
     if (!playerRef.current) return;
@@ -149,7 +166,7 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
       )}>
         {!isPlayerMinimized && isVideoVisible && (
           <div 
-            id="youtube-player" 
+            ref={playerElementRef}
             className="w-full md:w-64 aspect-video rounded-lg overflow-hidden"
           />
         )}

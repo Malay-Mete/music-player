@@ -30,31 +30,61 @@ export async function searchVideos(query: string): Promise<SearchResult[]> {
 }
 
 export function createYouTubePlayer(elementId: string, videoId: string): Promise<YT.Player> {
-  return new Promise((resolve) => {
-    if (!window.YT) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      document.body.appendChild(tag);
-    }
-
-    window.onYouTubeIframeAPIReady = () => {
-      const player = new window.YT.Player(elementId, {
-        height: '360',
-        width: '640',
-        videoId,
-        playerVars: {
-          autoplay: 0,
-          controls: 1,
-          modestbranding: 1,
-          playsinline: 1
-        },
-        events: {
-          onReady: (event) => {
-            resolve(event.target);
+  return new Promise((resolve, reject) => {
+    try {
+      // Check if element exists
+      if (!document.getElementById(elementId)) {
+        return reject(new Error(`Element with id ${elementId} not found`));
+      }
+      
+      // Load YouTube API if not already loaded
+      if (!window.YT || !window.YT.Player) {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        
+        // Create callback that will be called when API is loaded
+        const previousOnYouTubeIframeAPIReady = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = () => {
+          if (previousOnYouTubeIframeAPIReady) {
+            previousOnYouTubeIframeAPIReady();
           }
+          createPlayer();
+        };
+        
+        document.body.appendChild(tag);
+      } else {
+        // API already loaded, create player directly
+        createPlayer();
+      }
+      
+      function createPlayer() {
+        try {
+          const player = new window.YT.Player(elementId, {
+            height: '100%',
+            width: '100%',
+            videoId,
+            playerVars: {
+              autoplay: 0,
+              controls: 1,
+              modestbranding: 1,
+              playsinline: 1
+            },
+            events: {
+              onReady: (event) => {
+                resolve(event.target);
+              },
+              onError: (event) => {
+                reject(new Error(`YouTube player error: ${event.data}`));
+              }
+            }
+          });
+        } catch (error) {
+          reject(error);
         }
-      });
-    };
+      }
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 
