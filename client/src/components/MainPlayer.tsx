@@ -16,17 +16,27 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState([50]);
   const playerElementRef = useRef<HTMLDivElement>(null);
+  const [currentVideoId, setCurrentVideoId] = useState(videoId);
 
   useEffect(() => {
-    if (playerElementRef.current && videoId) {
-      createYouTubePlayer('youtube-player', videoId).then((player) => {
+    if (playerElementRef.current && currentVideoId) {
+      createYouTubePlayer('youtube-player', currentVideoId).then((player) => {
         playerRef.current = player;
-        player.addEventListener('onStateChange', (event) => {
+        player.addEventListener('onStateChange', (event: YT.OnStateChangeEvent) => {
           setIsPlaying(event.data === YT.PlayerState.PLAYING);
         });
       });
     }
-  }, [videoId]);
+
+    const handlePlayVideo = (event: CustomEvent<{ videoId: string }>) => {
+      setCurrentVideoId(event.detail.videoId);
+    };
+
+    window.addEventListener('PLAY_VIDEO', handlePlayVideo as EventListener);
+    return () => {
+      window.removeEventListener('PLAY_VIDEO', handlePlayVideo as EventListener);
+    };
+  }, [currentVideoId]);
 
   const togglePlayPause = () => {
     if (!playerRef.current) return;
@@ -48,7 +58,7 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
     <Card className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div ref={playerElementRef} id="youtube-player" className="hidden" />
-        
+
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
