@@ -41,6 +41,16 @@ export const signInWithGoogle = async () => {
     return result.user;
   } catch (error) {
     console.error("Error signing in with Google", error);
+    if (error.code === 'auth/unauthorized-domain') {
+      const domain = window.location.hostname;
+      throw new Error(
+        `Please add "${domain}" to the authorized domains list in your Firebase Console:\n` +
+        "1. Go to Firebase Console > Authentication > Settings\n" +
+        "2. Under 'Authorized domains', click 'Add domain'\n" +
+        `3. Add "${domain}"\n` +
+        "4. Click 'Add'"
+      );
+    }
     throw error;
   }
 };
