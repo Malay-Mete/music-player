@@ -10,6 +10,9 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+// Log initialization details for debugging
+const currentDomain = window.location.hostname;
+console.log("Current domain:", currentDomain);
 console.log("Initializing Firebase with config:", {
   ...firebaseConfig,
   apiKey: "HIDDEN" // Don't log the API key
