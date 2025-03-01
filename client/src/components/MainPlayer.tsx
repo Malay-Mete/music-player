@@ -130,7 +130,6 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
       )}>
         {!isPlayerMinimized && (
           <div 
-            ref={playerElementRef} 
             id="youtube-player" 
             className={clsx(
               "w-full md:w-64 aspect-video rounded-lg overflow-hidden",
