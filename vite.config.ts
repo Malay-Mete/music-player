@@ -7,15 +7,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default defineConfig({
-  base: "/music-player/", // Replace "music-player" with your GitHub repo name
+  base: "./", // ✅ Fixes relative paths for Vite
   plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),
-      "@shared": path.resolve(__dirname, "shared"),
     },
   },
-  root: path.resolve(__dirname, "client"),
+  root: path.resolve(__dirname, "client"), // ✅ Ensure Vite looks in "client"
   build: {
     outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
