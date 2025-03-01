@@ -1,51 +1,55 @@
+
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Plus } from 'lucide-react';
+import { Play, Plus, Music } from 'lucide-react';
 import type { Playlist, PlaylistTrack } from '@shared/schema';
+import { useLocation } from 'wouter';
 
-interface PlaylistCardProps {
+type PlaylistCardProps = {
   playlist: Playlist;
-  tracks?: PlaylistTrack[];
-  onPlay?: (trackId: string) => void;
-  onAddTrack?: () => void;
-}
+  onAddTrack: () => void;
+};
 
-export function PlaylistCard({ playlist, tracks, onPlay, onAddTrack }: PlaylistCardProps) {
+export function PlaylistCard({ playlist, onAddTrack }: PlaylistCardProps) {
+  const [_, setLocation] = useLocation();
+  
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-xl font-semibold">{playlist.name}</CardTitle>
-        {onAddTrack && (
-          <Button variant="ghost" size="icon" onClick={onAddTrack}>
-            <Plus className="h-4 w-4" />
-          </Button>
-        )}
-      </CardHeader>
-      <CardContent>
-        {tracks && tracks.length > 0 ? (
-          <ul className="space-y-2">
-            {tracks.map((track) => (
-              <li
-                key={track.id}
-                className="flex items-center justify-between p-2 rounded-md hover:bg-accent"
-              >
-                <span className="truncate">{track.title}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onPlay?.(track.videoId)}
-                >
-                  <Play className="h-4 w-4" />
-                </Button>
-              </li>
-            ))}
-          </ul>
+    <div 
+      className="spotify-card group cursor-pointer" 
+      onClick={() => setLocation(`/playlist/${playlist.id}`)}
+    >
+      <div className="aspect-square mb-4 bg-black/30 rounded-md overflow-hidden relative flex items-center justify-center">
+        {playlist.coverUrl ? (
+          <img 
+            src={playlist.coverUrl} 
+            alt={playlist.name} 
+            className="w-full h-full object-cover"
+          />
         ) : (
-          <p className="text-muted-foreground text-center py-4">
-            No tracks in this playlist
-          </p>
+          <Music size={48} className="text-white/50" />
         )}
-      </CardContent>
-    </Card>
+        <div className="hover-play-button">
+          <Play fill="white" className="text-white" size={16} />
+        </div>
+      </div>
+      <h3 className="font-bold text-white truncate">{playlist.name}</h3>
+      <p className="text-sm text-white/70 mt-1 truncate">
+        {playlist.description || `Created by you`}
+      </p>
+      
+      <div className="mt-3 flex items-center gap-2">
+        <Button 
+          size="sm" 
+          variant="ghost" 
+          className="p-0 hover:bg-transparent"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddTrack();
+          }}
+        >
+          <Plus size={16} className="text-white/70 hover:text-white" />
+        </Button>
+      </div>
+    </div>
   );
 }
