@@ -22,6 +22,7 @@ declare namespace YT {
       controls?: 0 | 1;
       modestbranding?: 0 | 1;
       playsinline?: 0 | 1;
+      suggestedQuality?: 'tiny' | 'small' | 'medium' | 'large' | 'hd720' | 'hd1080' | 'highres' ; // Added suggestedQuality
     };
     events?: {
       onReady?: (event: { target: Player }) => void;

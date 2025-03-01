@@ -55,20 +55,20 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
 
   useEffect(() => {
     let player: YT.Player | undefined;
-    
+
     if (currentVideoId && playerElementRef.current && (isVideoVisible || !isPlayerMinimized)) {
       // Create a new div element for the player to prevent stale references
       const playerId = `youtube-player-${Date.now()}`;
       const playerContainer = playerElementRef.current;
-      
+
       // Clear previous content
       playerContainer.innerHTML = '';
-      
+
       // Create new element for player
       const playerElement = document.createElement('div');
       playerElement.id = playerId;
       playerContainer.appendChild(playerElement);
-      
+
       createYouTubePlayer(playerId, currentVideoId, (state) => {
         // Update isPlaying state based on player state
         setIsPlaying(state === 1); // 1 is YT.PlayerState.PLAYING
@@ -104,7 +104,7 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
 
   const togglePlayPause = () => {
     if (!playerRef.current) return;
-    
+
     try {
       if (isPlaying) {
         playerRef.current.pauseVideo();
@@ -126,8 +126,26 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
   };
 
   const toggleVideo = () => {
-    // Don't pause the video when hiding, just toggle visibility
+    // Save current playback state and time
+    let wasPlaying = false;
+    let currentTime = 0;
+
+    if (playerRef.current) {
+      wasPlaying = playerRef.current.getPlayerState() === 1; // 1 is playing
+      currentTime = playerRef.current.getCurrentTime();
+    }
+
     setIsVideoVisible(!isVideoVisible);
+
+    // If hiding video, we need to ensure the audio continues
+    if (!isVideoVisible && playerRef.current && wasPlaying) {
+      // Give time for state update to process
+      setTimeout(() => {
+        if (playerRef.current) {
+          playerRef.current.playVideo();
+        }
+      }, 300);
+    }
   };
 
   const handleQualityChange = (value: string) => {
@@ -137,37 +155,37 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
         // Save current state
         const currentTime = playerRef.current.getCurrentTime();
         const wasPlaying = playerRef.current.getPlayerState() === 1;
-        
+
         // Set quality
         playerRef.current.setPlaybackQuality(value);
-        
+
         // Force quality change by recreating player
         const currentVideoId = playerRef.current.getVideoData().video_id;
         const currentVolume = playerRef.current.getVolume();
-        
+
         // Destroy current player
         playerRef.current.destroy();
-        
+
         // Recreate player with new quality setting
         if (playerElementRef.current) {
           const playerId = `youtube-player-${Date.now()}`;
           const playerContainer = playerElementRef.current;
-          
+
           // Clear previous content
           playerContainer.innerHTML = '';
-          
+
           // Create new element for player
           const playerElement = document.createElement('div');
           playerElement.id = playerId;
           playerContainer.appendChild(playerElement);
-          
+
           createYouTubePlayer(playerId, currentVideoId)
             .then((newPlayer) => {
               playerRef.current = newPlayer;
               newPlayer.setPlaybackQuality(value);
               newPlayer.setVolume(currentVolume);
               newPlayer.seekTo(currentTime, true);
-              
+
               // If video was playing, resume playback
               if (wasPlaying) {
                 setTimeout(() => {

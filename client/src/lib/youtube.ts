@@ -40,12 +40,12 @@ export function createYouTubePlayer(
       if (!document.getElementById(elementId)) {
         return reject(new Error(`Element with id ${elementId} not found`));
       }
-      
+
       // Load YouTube API if not already loaded
       if (!window.YT || !window.YT.Player) {
         const tag = document.createElement('script');
         tag.src = 'https://www.youtube.com/iframe_api';
-        
+
         // Create callback that will be called when API is loaded
         const previousOnYouTubeIframeAPIReady = window.onYouTubeIframeAPIReady;
         window.onYouTubeIframeAPIReady = () => {
@@ -54,13 +54,13 @@ export function createYouTubePlayer(
           }
           createPlayer();
         };
-        
+
         document.body.appendChild(tag);
       } else {
         // API already loaded, create player directly
         createPlayer();
       }
-      
+
       function createPlayer() {
         try {
           const player = new window.YT.Player(elementId, {
@@ -71,14 +71,17 @@ export function createYouTubePlayer(
               autoplay: 0,
               controls: 1,
               modestbranding: 1,
-              playsinline: 1
+              playsinline: 1,
+              iv_load_policy: 3, // Disable annotations
+              rel: 0 // Disable related videos
             },
             events: {
               onReady: (event) => {
+                // Set initial quality to lowest
+                event.target.setPlaybackQuality('tiny');
                 resolve(event.target);
               },
               onStateChange: (event) => {
-                // Call the state change callback if provided
                 if (onStateChange) {
                   onStateChange(event.data);
                 }
