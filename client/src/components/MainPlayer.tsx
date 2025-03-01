@@ -3,8 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { createYouTubePlayer } from '@/lib/youtube';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Video, VideoOff, Heart } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Video, VideoOff, Heart, ChevronDown, ChevronUp } from 'lucide-react';
+import { clsx } from 'clsx';
 
 interface MainPlayerProps {
   videoId: string;
@@ -19,20 +21,45 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
   const playerElementRef = useRef<HTMLDivElement>(null);
   const [currentVideoId, setCurrentVideoId] = useState(videoId);
   const [isVideoVisible, setIsVideoVisible] = useState(true);
-  const [isLiked, setIsLiked] = useState(false);
+  const [isPlayerMinimized, setIsPlayerMinimized] = useState(false);
+
+  // Like functionality
+  const { data: likedStatus } = useQuery<{ isLiked: boolean }>({
+    queryKey: ['/api/liked-songs', currentVideoId],
+    enabled: !!currentVideoId
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      if (likedStatus?.isLiked) {
+        await apiRequest('DELETE', `/api/liked-songs/${currentVideoId}`);
+      } else {
+        await apiRequest('POST', '/api/liked-songs', {
+          videoId: currentVideoId,
+          title: 'Song Title', // We should store this in state when video loads
+          thumbnail: 'Thumbnail URL'
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/liked-songs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/liked-songs', currentVideoId] });
+    }
+  });
 
   useEffect(() => {
     if (playerElementRef.current && currentVideoId) {
       createYouTubePlayer('youtube-player', currentVideoId).then((player) => {
         playerRef.current = player;
-        player.addEventListener('onStateChange', (event: CustomEvent) => {
-          setIsPlaying(event.data === YT.PlayerState.PLAYING);
+        player.addEventListener('onStateChange', (event: any) => {
+          setIsPlaying(event.data === window.YT.PlayerState.PLAYING);
         });
       });
     }
 
     const handlePlayVideo = (event: CustomEvent<{ videoId: string }>) => {
       setCurrentVideoId(event.detail.videoId);
+      setIsPlayerMinimized(false);
     };
 
     window.addEventListener('PLAY_VIDEO', handlePlayVideo as EventListener);
@@ -65,13 +92,33 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
   };
 
   return (
-    <Card className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex flex-col md:flex-row items-center justify-between max-w-7xl mx-auto gap-4">
-        <div 
-          ref={playerElementRef} 
-          id="youtube-player" 
-          className={`w-full md:w-64 aspect-video ${isVideoVisible ? '' : 'hidden'}`} 
-        />
+    <Card className={clsx(
+      "fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300",
+      isPlayerMinimized ? "h-16" : "h-auto"
+    )}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute top-0 right-4 md:right-8"
+        onClick={() => setIsPlayerMinimized(!isPlayerMinimized)}
+      >
+        {isPlayerMinimized ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </Button>
+
+      <div className={clsx(
+        "flex flex-col md:flex-row items-center justify-between max-w-7xl mx-auto gap-4 p-4",
+        isPlayerMinimized ? "h-16" : "h-auto"
+      )}>
+        {!isPlayerMinimized && (
+          <div 
+            ref={playerElementRef} 
+            id="youtube-player" 
+            className={clsx(
+              "w-full md:w-64 aspect-video rounded-lg overflow-hidden",
+              isVideoVisible ? '' : 'hidden'
+            )} 
+          />
+        )}
 
         <div className="flex items-center gap-4">
           <Button
@@ -105,37 +152,43 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
           </Button>
         </div>
 
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleVideo}
-          >
-            {isVideoVisible ? (
-              <Video className="h-5 w-5" />
-            ) : (
-              <VideoOff className="h-5 w-5" />
-            )}
-          </Button>
+        {!isPlayerMinimized && (
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleVideo}
+            >
+              {isVideoVisible ? (
+                <Video className="h-5 w-5" />
+              ) : (
+                <VideoOff className="h-5 w-5" />
+              )}
+            </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsLiked(!isLiked)}
-          >
-            <Heart className={`h-5 w-5 ${isLiked ? 'fill-current text-red-500' : ''}`} />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => likeMutation.mutate()}
+              disabled={likeMutation.isPending}
+            >
+              <Heart className={clsx(
+                "h-5 w-5",
+                likedStatus?.isLiked && "fill-current text-red-500"
+              )} />
+            </Button>
 
-          <div className="flex items-center gap-2 w-32 md:w-48">
-            <Volume2 className="h-4 w-4" />
-            <Slider
-              value={volume}
-              onValueChange={handleVolumeChange}
-              max={100}
-              step={1}
-            />
+            <div className="flex items-center gap-2 w-32 md:w-48">
+              <Volume2 className="h-4 w-4" />
+              <Slider
+                value={volume}
+                onValueChange={handleVolumeChange}
+                max={100}
+                step={1}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </Card>
   );

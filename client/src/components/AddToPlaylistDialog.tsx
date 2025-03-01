@@ -13,7 +13,7 @@ interface AddToPlaylistDialogProps {
     videoId: string;
     title: string;
     thumbnail: string;
-  };
+  } | null;
 }
 
 export function AddToPlaylistDialog({ open, onOpenChange, track }: AddToPlaylistDialogProps) {
@@ -24,6 +24,7 @@ export function AddToPlaylistDialog({ open, onOpenChange, track }: AddToPlaylist
 
   const addTrackMutation = useMutation({
     mutationFn: async (playlistId: number) => {
+      if (!track) return;
       const position = 0; // We'll implement proper positioning later
       await apiRequest('POST', `/api/playlists/${playlistId}/tracks`, {
         videoId: track.videoId,
@@ -48,6 +49,8 @@ export function AddToPlaylistDialog({ open, onOpenChange, track }: AddToPlaylist
       });
     }
   });
+
+  if (!track) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
