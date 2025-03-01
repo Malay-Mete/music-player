@@ -45,10 +45,25 @@ export function createYouTubePlayer(elementId: string, videoId: string): Promise
         playerVars: {
           autoplay: 0,
           controls: 1,
-          modestbranding: 1
+          modestbranding: 1,
+          playsinline: 1
+        },
+        events: {
+          onReady: (event) => {
+            resolve(event.target);
+          }
         }
       });
-      resolve(player);
     };
   });
 }
+
+// Quality levels from lowest to highest data usage
+export const qualityLevels = [
+  { value: 'tiny', label: 'Lowest (144p)', dataUsage: '~50MB/hour' },
+  { value: 'small', label: 'Low (240p)', dataUsage: '~100MB/hour' },
+  { value: 'medium', label: 'Medium (360p)', dataUsage: '~250MB/hour' },
+  { value: 'large', label: 'High (480p)', dataUsage: '~500MB/hour' },
+  { value: 'hd720', label: 'HD (720p)', dataUsage: '~1GB/hour' },
+  { value: 'auto', label: 'Auto', dataUsage: 'Variable' },
+];

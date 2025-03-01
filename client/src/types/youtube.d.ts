@@ -21,6 +21,12 @@ declare namespace YT {
       autoplay?: 0 | 1;
       controls?: 0 | 1;
       modestbranding?: 0 | 1;
+      playsinline?: 0 | 1;
+    };
+    events?: {
+      onReady?: (event: { target: Player }) => void;
+      onStateChange?: (event: { data: number }) => void;
+      onError?: (event: { data: number }) => void;
     };
   }
 
@@ -31,7 +37,9 @@ declare namespace YT {
     seekTo(seconds: number, allowSeekAhead: boolean): void;
     setVolume(volume: number): void;
     getVolume(): number;
-    addEventListener(event: string, listener: (event: CustomEvent) => void): void;
+    setPlaybackQuality(suggestedQuality: string): void;
+    getVideoData(): { title: string; video_id: string };
+    destroy(): void;
   }
 }
 

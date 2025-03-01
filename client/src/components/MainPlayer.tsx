@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { createYouTubePlayer } from '@/lib/youtube';
+import { createYouTubePlayer, qualityLevels } from '@/lib/youtube';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
@@ -25,7 +25,7 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
   const [currentVideoId, setCurrentVideoId] = useState(videoId);
   const [isVideoVisible, setIsVideoVisible] = useState(true);
   const [isPlayerMinimized, setIsPlayerMinimized] = useState(false);
-  const [quality, setQuality] = useState('auto');
+  const [quality, setQuality] = useState('small'); // Default to low quality for data saving
 
   // Like functionality
   const { data: likedStatus } = useQuery<{ isLiked: boolean }>({
@@ -54,18 +54,16 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
 
   useEffect(() => {
     let player: YT.Player | undefined;
+    let container = document.getElementById('youtube-player');
 
-    if (currentVideoId) {
-      createYouTubePlayer('youtube-player', currentVideoId).then((newPlayer) => {
-        player = newPlayer;
-        playerRef.current = newPlayer;
-
-        player.addEventListener('onStateChange', (event: any) => {
-          setIsPlaying(event.data === window.YT.PlayerState.PLAYING);
+    if (currentVideoId && container) {
+      createYouTubePlayer('youtube-player', currentVideoId)
+        .then((newPlayer) => {
+          player = newPlayer;
+          playerRef.current = newPlayer;
+          player.setPlaybackQuality(quality);
+          player.setVolume(volume[0]);
         });
-
-        player.setPlaybackQuality(quality === 'auto' ? 'default' : quality);
-      });
     }
 
     const handlePlayVideo = (event: CustomEvent<{ videoId: string }>) => {
@@ -79,6 +77,7 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
       window.removeEventListener('PLAY_VIDEO', handlePlayVideo as EventListener);
       if (player) {
         player.destroy();
+        playerRef.current = undefined;
       }
     };
   }, [currentVideoId, quality]);
@@ -106,7 +105,7 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
   const handleQualityChange = (value: string) => {
     setQuality(value);
     if (playerRef.current) {
-      playerRef.current.setPlaybackQuality(value === 'auto' ? 'default' : value);
+      playerRef.current.setPlaybackQuality(value);
     }
   };
 
@@ -197,15 +196,15 @@ export function MainPlayer({ videoId, onNext, onPrevious }: MainPlayerProps) {
             </Button>
 
             <Select value={quality} onValueChange={handleQualityChange}>
-              <SelectTrigger className="w-[100px]">
+              <SelectTrigger className="w-[160px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="auto">Auto</SelectItem>
-                <SelectItem value="small">Low (240p)</SelectItem>
-                <SelectItem value="medium">Medium (360p)</SelectItem>
-                <SelectItem value="large">High (480p)</SelectItem>
-                <SelectItem value="hd720">HD (720p)</SelectItem>
+                {qualityLevels.map(level => (
+                  <SelectItem key={level.value} value={level.value}>
+                    {level.label} - {level.dataUsage}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
